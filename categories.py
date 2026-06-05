@@ -1,0 +1,17 @@
+CATEGORIES = [
+    "cat",
+    "dog",
+    "fish",
+    "bird",
+    "pizza",
+    "banana",
+    "apple",
+    "car",
+    "airplane",
+    "bicycle",
+    "house",
+    "tree",
+    "sun",
+    "eye",
+    "hat",
+]

@@ -1,0 +1,21 @@
+# Quick Draw raw + merged data (huge; users re-download via download_data.py)
+data/
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# Local editor / OS junk
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Claude session state (local paths, not portable)
+.claude/
+
+# Virtual envs
+.venv/
+venv/
+env/

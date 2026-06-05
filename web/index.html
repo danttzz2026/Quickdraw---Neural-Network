@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Quick Draw — Doodle Classifier</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <h1>What did you draw?</h1>
+    <p class="hint">Draw one of: cat, dog, fish, bird, pizza, banana, apple, car, airplane, bicycle, house, tree, sun, eye, hat.</p>
+
+    <div class="stage">
+      <canvas id="pad" width="280" height="280"></canvas>
+      <div id="results"></div>
+    </div>
+
+    <div class="controls">
+      <button id="clear">Clear</button>
+      <span id="status">ready</span>
+    </div>
+
+    <section class="architecture">
+      <h2>How it works — model architecture</h2>
+      <p class="arch-hint">
+        A small CNN with ~500K parameters. Each box is the shape of the feature map at that layer:
+        the box gets <strong>wider</strong> as the number of channels grows, and <strong>shorter</strong>
+        as the spatial resolution shrinks through max-pooling. Your 28×28 drawing enters at the left and is
+        progressively transformed into a 15-class probability vector on the right.
+      </p>
+      <svg class="arch-svg" viewBox="0 0 1040 290" xmlns="http://www.w3.org/2000/svg" role="img"
+           aria-label="CNN architecture diagram">
+
+        <!-- Center line at y=150 -->
+
+        <!-- 0. Input 1×28×28  X=48 W=4 Y=108 H=84 -->
+        <g>
+          <polygon class="top"  points="48,108 52,108 60,100 56,100" />
+          <polygon class="side" points="52,108 60,100 60,184 52,192" />
+          <rect    class="face" x="48" y="108" width="4" height="84" />
+          <text class="name" x="54" y="212">input</text>
+          <text class="dims" x="54" y="226">1×28×28</text>
+        </g>
+
+        <line class="connector" x1="64" y1="150" x2="138" y2="150" />
+        <text class="op" x="101" y="140">Conv 3×3</text>
+        <text class="op" x="101" y="152">+ ReLU</text>
+
+        <!-- 1. Conv1  32×28×28  X=140 W=22 Y=108 H=84 -->
+        <g>
+          <polygon class="top"  points="140,108 162,108 170,100 148,100" />
+          <polygon class="side" points="162,108 170,100 170,184 162,192" />
+          <rect    class="face" x="140" y="108" width="22" height="84" />
+          <text class="name" x="155" y="212">conv1</text>
+          <text class="dims" x="155" y="226">32×28×28</text>
+        </g>
+
+        <line class="connector" x1="174" y1="150" x2="258" y2="150" />
+        <text class="op" x="216" y="142">MaxPool 2×2</text>
+
+        <!-- 2. Pool1  32×14×14  X=260 W=22 Y=129 H=42 -->
+        <g>
+          <polygon class="top"  points="260,129 282,129 290,121 268,121" />
+          <polygon class="side" points="282,129 290,121 290,163 282,171" />
+          <rect    class="face" x="260" y="129" width="22" height="42" />
+          <text class="name" x="275" y="212">pool1</text>
+          <text class="dims" x="275" y="226">32×14×14</text>
+        </g>
+
+        <line class="connector" x1="294" y1="150" x2="378" y2="150" />
+        <text class="op" x="336" y="140">Conv 3×3</text>
+        <text class="op" x="336" y="152">+ ReLU</text>
+
+        <!-- 3. Conv2  64×14×14  X=380 W=44 Y=129 H=42 -->
+        <g>
+          <polygon class="top"  points="380,129 424,129 432,121 388,121" />
+          <polygon class="side" points="424,129 432,121 432,163 424,171" />
+          <rect    class="face" x="380" y="129" width="44" height="42" />
+          <text class="name" x="406" y="212">conv2</text>
+          <text class="dims" x="406" y="226">64×14×14</text>
+        </g>
+
+        <line class="connector" x1="436" y1="150" x2="538" y2="150" />
+        <text class="op" x="487" y="142">MaxPool 2×2</text>
+
+        <!-- 4. Pool2  64×7×7  X=540 W=44 Y=140 H=20 -->
+        <g>
+          <polygon class="top"  points="540,140 584,140 592,132 548,132" />
+          <polygon class="side" points="584,140 592,132 592,152 584,160" />
+          <rect    class="face" x="540" y="140" width="44" height="20" />
+          <text class="name" x="566" y="212">pool2</text>
+          <text class="dims" x="566" y="226">64×7×7</text>
+        </g>
+
+        <line class="connector" x1="596" y1="150" x2="678" y2="150" />
+        <text class="op" x="637" y="142">Flatten</text>
+
+        <!-- 5. Flatten 3136  X=680 W=6 Y=90 H=120 (no iso depth, just thin slab) -->
+        <g>
+          <polygon class="top"  points="680,90 686,90 690,86 684,86" />
+          <polygon class="side" points="686,90 690,86 690,206 686,210" />
+          <rect    class="face" x="680" y="90" width="6" height="120" />
+          <text class="name" x="685" y="226">flatten</text>
+          <text class="dims" x="685" y="240">3136</text>
+        </g>
+
+        <line class="connector" x1="694" y1="150" x2="808" y2="150" />
+        <text class="op" x="751" y="140">Dense + ReLU</text>
+        <text class="op" x="751" y="152">+ Dropout(0.3)</text>
+
+        <!-- 6. Dense 128  X=810 W=6 Y=125 H=50 -->
+        <g>
+          <polygon class="top"  points="810,125 816,125 820,121 814,121" />
+          <polygon class="side" points="816,125 820,121 820,171 816,175" />
+          <rect    class="face" x="810" y="125" width="6" height="50" />
+          <text class="name" x="815" y="212">dense</text>
+          <text class="dims" x="815" y="226">128</text>
+        </g>
+
+        <line class="connector" x1="824" y1="150" x2="918" y2="150" />
+        <text class="op" x="871" y="140">Dense</text>
+        <text class="op" x="871" y="152">+ Softmax</text>
+
+        <!-- 7. Output 15  X=920 W=6 Y=141 H=18 -->
+        <g>
+          <polygon class="top"  points="920,141 926,141 930,137 924,137" />
+          <polygon class="side" points="926,141 930,137 930,155 926,159" />
+          <rect    class="face" x="920" y="141" width="6" height="18" />
+          <text class="name" x="925" y="212">output</text>
+          <text class="dims" x="925" y="226">15</text>
+          <text class="dims-sub" x="925" y="238">(softmax)</text>
+        </g>
+      </svg>
+
+      <dl class="arch-legend">
+        <dt>Total parameters</dt><dd>~500,000 trainable weights</dd>
+        <dt>Conv 3×3</dt><dd>Slides a 3×3 filter across the image to detect local patterns (edges, curves, corners). Each layer learns dozens of different filters.</dd>
+        <dt>MaxPool 2×2</dt><dd>Keeps the strongest signal in each 2×2 block, halving the spatial size and making the representation translation-tolerant.</dd>
+        <dt>Flatten + Dense</dt><dd>Unrolls the 7×7×64 feature grid into a single vector of 3,136 numbers, then combines them into a 15-way classification.</dd>
+        <dt>Softmax</dt><dd>Squashes the 15 raw scores into probabilities that sum to 100% — what you see in the bars above.</dd>
+      </dl>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
